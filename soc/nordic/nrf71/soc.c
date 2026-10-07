@@ -236,6 +236,22 @@ static void wifi_setup(void)
 #endif
 #endif
 
+#define GPIO_PROBE_CFG_BASE  0x500D8680UL
+void enable_gpio_probing(void)
+{
+    /* Leave P3-0.6, 0.7 PINs untouched */
+    static const uint32_t gpio_probe_pin_cfg[] = {
+        0x30000003, 0x30000003, 0x30000003, 0x30000003,
+        0x30000003, 0x30000003, 0x00000002, 0x00000002,
+        0x30000003, 0x30000003, 0x30000003, 0x30000003,
+    };
+    
+    for (uint32_t i = 0; i < (sizeof(gpio_probe_pin_cfg) / sizeof(gpio_probe_pin_cfg[0])); i++)
+    {
+        *(volatile uint32_t *)(GPIO_PROBE_CFG_BASE + (4U * i)) = gpio_probe_pin_cfg[i];
+    }
+}
+
 /**
  * This function is used by TF-M (see target_cfg_71.c, nrf71_init.c). You must align the TF-M
  * implementation if you want to change this function.
@@ -283,6 +299,8 @@ int nordicsemi_nrf71_init(void)
 	/* Steer the (now powered) antenna switch towards its default radio. */
 	antsw_setup();
 #endif
+
+enable_gpio_probing();
 
 #if defined(CONFIG_SOC_NRF71_WIFI_BOOT)
 	wifi_setup();
